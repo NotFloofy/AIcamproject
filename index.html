@@ -23,7 +23,7 @@
       width: 100%; 
       height: 100%; 
       object-fit: cover; 
-      transform: scaleX(-1); 
+      /* Removed transform to show correct orientation */
       display: none; 
     }
     canvas { 
@@ -77,18 +77,15 @@
     const statusText = document.getElementById("status");
     let model;
 
-    // When the cute button is clicked, the browser's normal permission prompt appears!
+    // When the cute button is clicked, the browser's normal camera permission prompt appears!
     startButton.addEventListener("click", () => {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
         .then(stream => {
           video.srcObject = stream;
           video.addEventListener("loadedmetadata", () => {
-            // Set canvas dimensions based on video size
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            // Hide the start button once permission is granted
             startButton.style.display = "none";
-            // Show the video feed and canvas, cutie~
             video.style.display = "block";
             canvas.style.display = "block";
             statusText.innerText = "Camera is on! Loading our AI model, cutie~";
@@ -102,26 +99,46 @@
 
     async function loadModel() {
       model = await cocoSsd.load();
-      statusText.innerText = "Model loaded! Detecting objects, cutie~";
-      detectObjects();
+      statusText.innerText = "Model loaded! Tap on an object to detect it, cutie~";
     }
 
-    async function detectObjects() {
-      const predictions = await model.detect(video);
+    // When you tap on the canvas, the AI will run detection on that frame.
+    canvas.addEventListener("click", async (e) => {
+      // Clear any previous drawings
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Calculate tap coordinates relative to the canvas
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      
+      statusText.innerText = "Detecting, cutie~";
+      // Run detection on the current video frame
+      const predictions = await model.detect(video);
+      let detected = false;
+      
       predictions.forEach(prediction => {
-        ctx.beginPath();
-        ctx.rect(...prediction.bbox);
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = "red";
-        ctx.fillStyle = "red";
-        ctx.stroke();
-        ctx.font = "18px Arial";
-        ctx.fillText(`${prediction.class} (${Math.round(prediction.score * 100)}%)`,
-          prediction.bbox[0], prediction.bbox[1] > 20 ? prediction.bbox[1] - 5 : 20);
+        const [bx, by, bw, bh] = prediction.bbox;
+        // Check if tap coordinates are within the bounding box
+        if (x >= bx && x <= bx + bw && y >= by && y <= by + bh) {
+          detected = true;
+          // Draw a highlight box around the detected object
+          ctx.beginPath();
+          ctx.rect(bx, by, bw, bh);
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "lime";
+          ctx.stroke();
+          // Update the status with object details
+          statusText.innerText = `Detected: ${prediction.class} (${Math.round(prediction.score * 100)}%)`;
+        }
       });
-      requestAnimationFrame(detectObjects);
-    }
+      
+      if (!detected) {
+        statusText.innerText = "No object detected at that spot, cutie~";
+      }
+    });
   </script>
 </body>
 </html>
