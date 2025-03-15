@@ -68,7 +68,6 @@
     <video id="webcam" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
   </div>
-
   <script>
     const startButton = document.getElementById("startButton");
     const video = document.getElementById("webcam");
@@ -76,9 +75,8 @@
     const ctx = canvas.getContext("2d");
     const statusText = document.getElementById("status");
     let model;
-
     startButton.addEventListener("click", () => {
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } })
         .then(stream => {
           video.srcObject = stream;
           video.addEventListener("loadedmetadata", () => {
@@ -95,17 +93,15 @@
           alert("Oops! Unable to access the camera: " + err);
         });
     });
-
     async function loadModel() {
       model = await cocoSsd.load();
       statusText.innerText = "Model loaded! Detecting objects, cutie~";
       detectObjects();
     }
-
     async function detectObjects() {
       const predictions = await model.detect(video);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const threshold = 0.2;
+      const threshold = 0.1;
       predictions.forEach(prediction => {
         if (prediction.score >= threshold) {
           const [x, y, width, height] = prediction.bbox;
