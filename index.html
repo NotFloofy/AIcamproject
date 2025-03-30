@@ -63,8 +63,8 @@
 </head>
 <body>
   <div id="container">
-    <p id="status">Tap the button to allow camera access, cutie~</p>
-    <button id="startButton">Start Camera :3</button>
+    <p id="status">tap the button to allow camera access :3</p>
+    <button id="startButton">start camera :3</button>
     <video id="webcam" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
   </div>
@@ -85,7 +85,7 @@
             startButton.style.display = "none";
             video.style.display = "block";
             canvas.style.display = "block";
-            statusText.innerText = "Camera is on! Loading our AI model, cutie~";
+            statusText.innerText = "camera has access :3 loading the AI model";
             loadModel();
           });
         })
